@@ -169,7 +169,7 @@ const App = () => {
 
             const payload = { contents: chatHistoryForLLM };
             const apiKey = ""; // Canvas will provide this at runtime
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=\${apiKey}`;
 
             const response = await fetch(apiUrl, {
                 method: 'POST',
@@ -199,135 +199,13 @@ const App = () => {
         setShowInfo(!showInfo);
     };
 
-    if (!isAuthReady) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-                <div className="text-lg text-gray-700 dark:text-gray-300">Loading chatbot...</div>
-            </div>
-        );
-    }
+    // Get user's location
+    useEffect(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+                console.log("Latitude:", latitude, "Longitude:", longitude);
 
-    return (
-        <div className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-inter">
-            {/* Header */}
-            <header className="bg-gradient-to-r from-blue-600 to-purple-700 p-4 text-white shadow-md flex justify-between items-center rounded-b-xl">
-                <h1 className="text-2xl font-bold">Impressionable Chatbot</h1>
-                <button
-                    onClick={toggleInfo}
-                    className="p-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30 transition-all duration-200"
-                    aria-label="Toggle information"
-                >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </button>
-            </header>
-
-            {/* Info Message */}
-            {showInfo && (
-                <div className="bg-blue-100 dark:bg-blue-900 p-4 m-4 rounded-lg shadow-inner text-blue-800 dark:text-blue-200">
-                    <p className="mb-2">This is your impressionable chatbot. You can chat with it normally, or you can "train" it with specific Q&A pairs.</p>
-                    <p className="mb-2">To train, use the command: <code className="font-mono bg-blue-200 dark:bg-blue-800 px-2 py-1 rounded">/teach "your question" "your answer"</code></p>
-                    <p className="mb-2">Example: <code className="font-mono bg-blue-200 dark:bg-blue-800 px-2 py-1 rounded">/teach "What is your favorite color?" "My favorite color is blue."</code></p>
-                    <p className="mb-2">Your user ID: <code className="font-mono bg-blue-200 dark:bg-blue-800 px-2 py-1 rounded break-all">{userId}</code></p>
-                    <p>Type <code className="font-mono bg-blue-200 dark:bg-blue-800 px-2 py-1 rounded">/clear</code> to clear the chat history.</p>
-                </div>
-            )}
-
-            {/* Chat Messages Area */}
-            <main className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-                {messages.length === 0 && !isLoading && (
-                    <div className="text-center text-gray-500 dark:text-gray-400 mt-10">
-                        Start chatting or train your bot!
-                    </div>
-                )}
-                {messages.map((msg) => (
-                    <div
-                        key={msg.id}
-                        className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                        <div
-                            className={`max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl p-3 rounded-xl shadow-md
-                                ${msg.sender === 'user'
-                                    ? 'bg-blue-500 text-white rounded-br-none'
-                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-bl-none'
-                                }`}
-                        >
-                            <p className="text-sm">{msg.text}</p>
-                            <span className="text-xs opacity-75 mt-1 block">
-                                {msg.timestamp?.toDate ? msg.timestamp.toDate().toLocaleTimeString() : 'Sending...'}
-                            </span>
-                        </div>
-                    </div>
-                ))}
-                {isLoading && (
-                    <div className="flex justify-start">
-                        <div className="max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl p-3 rounded-xl shadow-md bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-bl-none">
-                            <div className="flex items-center">
-                                <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-gray-100 mr-2"></span>
-                                Thinking...
-                            </div>
-                        </div>
-                    </div>
-                )}
-                <div ref={messagesEndRef} />
-            </main>
-
-            {/* Message Input */}
-            <form onSubmit={handleSendMessage} className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex items-center rounded-t-xl shadow-lg">
-                <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type your message or /teach \"Q\" \"A\"..."
-                    className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100 transition-all duration-200"
-                    disabled={isLoading}
-                />
-                <button
-                    type="submit"
-                    className="ml-3 p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={isLoading}
-                >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                    </svg>
-                </button>
-            </form>
-
-            {/* Tailwind CSS Script */}
-            <script src="https://cdn.tailwindcss.com"></script>
-            <style>
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-                .font-inter {{
-                    font-family: 'Inter', sans-serif;
-                }}
-                /* Custom scrollbar for better aesthetics */
-                .custom-scrollbar::-webkit-scrollbar {{
-                    width: 8px;
-                }}
-                .custom-scrollbar::-webkit-scrollbar-track {{
-                    background: #f1f1f1;
-                    border-radius: 10px;
-                }}
-                .custom-scrollbar::-webkit-scrollbar-thumb {{
-                    background: #888;
-                    border-radius: 10px;
-                }}
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover {{
-                    background: #555;
-                }}
-                .dark .custom-scrollbar::-webkit-scrollbar-track {{
-                    background: #333;
-                }}
-                .dark .custom-scrollbar::-webkit-scrollbar-thumb {{
-                    background: #555;
-                }}
-                .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {{
-                    background: #777;
-                }}
-            </style>
-        </div>
-    );
-};
-
-export default App;
+                // Send location data to your server or perform any other action
+               
